@@ -1,0 +1,61 @@
+---
+title: "Introduction"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      cache = TRUE, 
+                      cache.path = "cache-files/")
+```
+
+## Introduction to NHANES
+
+The National Health and Nutrition Examination Survey (NHANES) is one of the most important sources of information about the health of the U.S. population as it uses a complex, multi-stage sampling design to make sure its findings are nationally representative.
+
+
+## NHANES Multi-Stage Sampling Design
+
+The important survey design features of NHANES are the following:
+
+### 1. Strata (`SDMVSTRA`)
+
+Strata are groups of similar geographic areas (like counties) that are created before sampling begins. NHANES uses stratification to ensure that all segments of the population, including different community types, are properly represented in the final sample
+
+### 2. Primary Sampling Units (`SDMVPSU`)
+
+Primary Sampling Units (PSUs) are the specific geographic locations, such as counties, that are randomly selected from within each stratum. This process, known as cluster sampling, is a practical way to survey a large and dispersed population. This clustering of participants must be accounted for during statistical analysis to calculate correct standard errors and confidence intervals.
+
+### 3. Survey Weights (`WTMEC2YR`)
+
+Survey Weights are values assigned to each participant to adjust for their probability of being selected into the sample. Because NHANES intentionally oversamples certain subpopulations to ensure sufficient data for analysis, these weights are crucial. The weight value indicates how many people in the entire U.S. population a single participant represents. Using the survey weights allows the results from the sample to be generalized to the full U.S. civilian, non-institutionalized population
+
+
+## Accessing the Data: Using the `nhanesA` Package in R
+
+The easiest and most reproducible way to access NHANES data is with the R package `nhanesA` - https://cran.r-project.org/web/packages/nhanesA/vignettes/Introducing_nhanesA.html. This method allows you to download data straight into your R environment without saving files manually.
+
+```{r load-nhanes, cache=TRUE}
+# Install the package if you haven't already
+#install.packages("nhanesA")
+
+# Load the package
+library(nhanesA)
+```
+
+Now that the `nhanesA` package is loaded, you can browse the datasets available in each survey cycle. The `nhanesTables()` function is a useful function for this. It takes two main arguments: the category of data you want to see and the year of the survey cycle.
+
+The five main categories of data are Demographics (DEMO), Dietary (DIET), Examination (EXAM), Laboratory (LAB), and Questionnaire (Q).
+
+The following code will display the available tables for all 5 categories for the 1999-2000 survey cycle.
+
+```{r check, cache=TRUE}
+head(nhanesTables('DEMO', 1999))
+head(nhanesTables('DIET', 1999))
+head(nhanesTables('EXAM', 1999))
+head(nhanesTables('LAB', 1999))
+head(nhanesTables('Q', 1999))
+```
+
+Now that we know how to find the specific table names we need, our next step is to download required data files into R, apply data cleaning steps, and perform our first analysis.

@@ -1,0 +1,12 @@
+---
+title: "Analysis 2"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      cache = TRUE, 
+                      cache.path = "cache-files/")
+```
+

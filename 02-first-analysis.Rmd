@@ -1,0 +1,282 @@
+---
+title: "Analysis 1"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      cache = TRUE, 
+                      cache.path = "cache-files/")
+```
+
+To perform any analysis, we first need to load the correct data. This section will guide you through the process of finding and loading NHANES data using the `nhanesA` package.
+
+A key thing to note is that NHANES releases data in 2-year cycles. Each data table name has a letter suffix that tells you which cycle it belongs to (e.g., _B for 2001-2002).
+
+**QUESTION:**
+For the purpose of this section, our focus will be on answering: What is the average age of male and female participants in the United States in cycle year 1999-2000 vs 2017-2018?
+
+* This is a very simple research question for this first analysis. The main goal of this tutorial is to teach the fundamental workflow of finding, loading, and preparing NHANES data for a proper survey-weighted analysis. Future examples can build on this foundation to answer more complex questions.
+
+The following code loads the necessary libraries.
+```{r libraries, cache=TRUE, warning=FALSE}
+# Load necessary packages
+library(nhanesA)
+library(dplyr)
+library(survey)
+library(DataExplorer)
+```
+
+
+**Step 1: Find the Right Data Table**
+
+Let's say we need the Demographics data. But what is the exact table name? You can use the `nhanesSearch()` function to find it. Let's search for tables with "Demographics" in their description for our two cycles of interest.
+
+```{r search, cache=TRUE}
+
+# Find Demographics tables for the 1999-2000 cycle
+#year1 = nhanesSearch("demo", ystart = 1999, ystop = 2000, nchar=50)
+#year1
+
+# Find Demographics tables for the 2017-2018 cycle
+#year2 = nhanesSearch("demo", ystart = 2017, ystop = 2018, nchar=50)
+#year2
+
+# !!! Doesn't run, will fix or change up using another function.
+
+```
+
+The table name is DEMO for the 1999-2000 cycle and DEMO_J for the 2017-2018 cycle.
+
+
+**Step 2: Find the Right Variable Names**
+
+Once you know the table name, you need to know the names of the variables within that table (e.g., for age, gender, and the survey weights). The `nhanesTableVars()` function lists all variables for a given table as shown below for example.
+
+```{r Vars, cache=TRUE}
+# Get the variable list for the Demographics table - 2017-2018 Demographics table
+variable_list <- nhanesTableVars(data_group = 'DEMO', nh_table = 'DEMO_J')
+variable_list
+```
+From here, we see that the variables needed are: RIDAGEYR (Age), RIAGENDR (Gender), SDMVPSU (PSU), SDMVSTRA (Strata), and WTINT2YR (Interview Weight).
+
+
+**Step 3: Load the Data**
+
+Now that we have all the information we need, we can load, prepare, and analyze the data.
+
+```{r load, cache=TRUE}
+# Load Demographics data for both cycles using the names we found
+demo_1999 <- nhanes('DEMO')
+head(demo_1999, 1)
+
+demo_2017 <- nhanes('DEMO_J')
+head(demo_2017, 1)
+```
+
+
+----------------------------------------------------------------------
+
+NOTE: Here are the suffixes for all cycles from 1999-2018:
+
+(no letter): 1999-2000
+
+_B: 2001-2002
+
+_C: 2003-2004
+
+_D: 2005-2006
+
+_E: 2007-2008
+
+_F: 2009-2010
+
+_G: 2011-2012
+
+_H: 2013-2014
+
+_I: 2015-2016
+
+_J: 2017-2018
+
+----------------------------------------------------------------
+
+**Step 4: Visualize Missing Data**
+
+Before we analyze, it's important to check for missing values. The `DataExplorer` package provides a powerful and easy way to do this with the `plot_missing()` function.
+
+First, we subset for the relevant columns and rename them for clarity. 
+
+```{r data-cleaning, cache=TRUE}
+# Create a smaller dataset with only the necessary columns
+
+# For the 1999-2000 cycle
+demo_1999_sub <- demo_1999 %>%
+  select(SEQN, RIAGENDR, RIDAGEYR, SDMVPSU, SDMVSTRA, WTINT4YR) %>%
+  rename(
+    Gender = RIAGENDR,
+    Age = RIDAGEYR,
+    PSU = SDMVPSU,
+    Strata = SDMVSTRA,
+    Weight = WTINT4YR
+  )
+head(demo_1999_sub)
+
+# For the 2017-2018 cycle
+demo_2017_sub <- demo_2017 %>%
+  select(SEQN, RIAGENDR, RIDAGEYR, SDMVPSU, SDMVSTRA, WTINT2YR) %>%
+  rename(
+    Gender = RIAGENDR,
+    Age = RIDAGEYR,
+    PSU = SDMVPSU,
+    Strata = SDMVSTRA,
+    Weight = WTINT2YR
+  )
+head(demo_2017_sub)
+```
+
+Plots:
+
+```{r plots, cache=TRUE}
+# Create a plot of missing values for the 1999-2000 data subset
+plot_missing(demo_1999_sub)
+sum(is.na(demo_1999_sub))
+
+# Create a plot of missing values for the 2017-2018 data subset
+plot_missing(demo_2017_sub)
+sum(is.na(demo_2017_sub))
+```
+There are no missing values in the following columns of these 2 cycles.
+
+
+**Step 5: Prepare and Analyze the Data**
+
+Now that we have loaded both datasets, we can perform the analysis to answer the question above. We will create a survey design object for each cycle, calculate the mean age by gender for each, and then combine the results into a final table for comparison.
+
+It's important to note that variable names for survey weights can change between cycles. The 1999-2000 cycle uses WTINT4YR, while the 2017-2018 cycle uses WTINT2YR. Always check the documentation for the correct variable names.
+
+_1999-2000 Cycle_
+
+```{r cycle1, cache=TRUE}
+# Prepare the 1999-2000 data by labeling the "Gender" column
+#demo_1999_sub <- demo_1999_sub %>%
+#  mutate(Gender = factor(Gender, levels = c(1, 2), 
+#                           labels = c("Male", "Female")))
+
+# Create a survey design object
+#design_1999 <- svydesign(
+#  ids = ~PSU,
+#  strata = ~Strata,
+#  weights = ~Weight,
+#  nest = TRUE,
+#  data = demo_1999_sub
+#)
+# Calculate mean age by gender
+# Also, remove na.rm=TRUE and subset the design object first
+#design_1999_clean <- subset(design_1999, !is.na(Age))
+#results_1999 <- svyby(
+#  ~Age, 
+#  by = ~Gender, 
+#  design = design_1999_clean, 
+#  FUN = svymean
+#)
+#results_1999$Cycle <- "1999-2000"
+
+
+
+
+# Unweighted 
+# Calculate the UNWEIGHTED mean age by gender
+unweighted_results_1 <- demo_1999_sub %>%
+  group_by(Gender) %>%
+  summarise(
+    Mean_Age = mean(Age, na.rm = TRUE),
+    N = n() # Also calculate the number of people in each group
+  )
+
+unweighted_results_1
+
+```
+
+
+_2017-2018 Cycle_
+
+```{r cycle2, cache=TRUE}
+# # Prepare the 2017-2018 data
+# demo_2017_sub <- demo_2017_sub %>%
+#   mutate(RIAGENDR = factor(RIAGENDR, levels = c(1, 2), 
+#                            labels = c("Male", "Female")))
+# 
+# # Create a survey design object
+# design_2017 <- svydesign(
+#   ids = ~SDMVPSU,
+#   strata = ~SDMVSTRA,
+#   weights = ~WTINT2YR,
+#   nest = TRUE,
+#   data = demo_2017_sub
+# )
+# 
+# # Calculate mean age by gender
+# results_2017 <- svyby(~RIDAGEYR, 
+#                       by = ~RIAGENDR, 
+#                       design = design_2017, 
+#                       FUN = svymean, 
+#                       na.rm = TRUE)
+# 
+# results_2017$Cycle <- "2017-2018"
+
+
+
+
+# Unweighted 
+# Calculate the UNWEIGHTED mean age by gender
+unweighted_results_2 <- demo_2017_sub %>%
+  group_by(Gender) %>%
+  summarise(
+    Mean_Age = mean(Age, na.rm = TRUE),
+    N = n() 
+  )
+
+unweighted_results_2
+
+```
+
+_Final Results_
+
+Finally, we can combine the results from both cycles into a single table to easily compare the average ages over time.
+
+```{r final, cache=TRUE}
+# # Combine the results from both cycles into one table
+# final_results <- rbind(results_1999, results_2017)
+# 
+# # Rename the columns
+# final_results_cleaned <- final_results %>%
+#   rename(
+#     Gender = RIAGENDR,
+#     `Mean Age` = RIDAGEYR,
+#     `Standard Error` = se
+#   )
+# final_results_cleaned
+
+
+# Combining unweighted results
+# Add a 'Cycle' column to the 1999-2000 results
+unweighted_results_1$Cycle <- "1999-2000"
+
+# Add a 'Cycle' column to the 2017-2018 results
+unweighted_results_2$Cycle <- "2017-2018"
+
+# Combine the two tables by binding the rows
+combined_unweighted_results <- rbind(unweighted_results_1, unweighted_results_2)
+
+# Print the final combined table
+# MALE
+combined_unweighted_results[combined_unweighted_results$Gender == "Male",]
+
+# FEMALE
+combined_unweighted_results[combined_unweighted_results$Gender == "Female",]
+
+```
+
+

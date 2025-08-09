@@ -7,3 +7,11 @@ Analyzing NHANES data can be challenging due to its complex survey design. The g
 For complete documentation and direct data access, the official NHANES website is an essential resource:
 
 -   <https://wwwn.cdc.gov/nchs/nhanes/>
+
+## Getting Started
+
+*To Do ...*
+
+## Files
+
+*To Do ...*
